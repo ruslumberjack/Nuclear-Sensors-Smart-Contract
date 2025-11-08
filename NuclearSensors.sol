@@ -22,6 +22,12 @@ contract NuclearSensors{
     int public constant TURBINE_LOAD_MIN = 40;
     int public constant TURBINE_LOAD_MAX = 100;
 
+    int public constant RCS_PRESSURE_MIN = 148;
+    int public constant RCS_PRESSURE_MAX = 158;
+
+    int public constant TOTAL_LEAKAGE_MIN = 665; //Divide by 1000
+    int public constant TOTAL_LEAKAGE_MAX = 4015;
+
     struct Sensor{
         int Time;
         int Radiation;
@@ -79,7 +85,28 @@ contract NuclearSensors{
 
             new_sensor.timestamp = block.timestamp;
 
-            new_sensor.Values_In_Range = false;
+            bool values_in_range = 
+                check_if_in_range(
+                    Radiation_Input,
+                    Temperature_Average_Input,
+                    PressureA_Input,
+                    PressureB_Input,
+                    Level_Pressure_Input,
+                    Power_Turbine_load_Input,
+                    RCS_Pressure_Input,
+                    Total_Leakage_Input
+                );
+            
+            if (values_in_range == false){
+                emit("One or more sensor values in data with timestamp: " + Time_Input + " are not in range.\n");
+                new_sensor.Values_In_Range = false;
+            }
+
+            else{
+                new_sensor.Values_In_Range = true;
+            }
+            
+
 
 
             Sensor_Array.push(new_sensor);
@@ -99,19 +126,51 @@ contract NuclearSensors{
 
         }
 
-        function check_if_in_range (
-            int Time_Input,
-            int Radiation_Input,
-            int Temperature_Average_Input,
-            int PressureA_Input,
-            int PressureB_Input,
-            int Level_Pressure_Input,
-            int Power_Turbine_load_Input,
-            int RCS_Pressure_Input,
-            int Total_Leakage_Input
-        ) pure public returns(bool){
+    function check_if_in_range (
             
+        int Radiation_Input,
+        int Temperature_Average_Input,
+        int PressureA_Input,
+        int PressureB_Input,
+        int Level_Pressure_Input,
+        int Power_Turbine_load_Input,
+        int RCS_Pressure_Input,
+        int Total_Leakage_Input
+        ) pure public returns(bool){
+            if (Radiation_Input != RADIATION_VALUE){
+                return false;
+            }
 
+            else if(Temperature_Average_Input < TEMPERATURE_MIN || Temperature_Average_Input > TEMPERATURE_MAX){
+                return false;
+            }
+
+            else if(PressureA_Input < STEAM_A_PRESSURE_MIN || STEAM_A_PRESSURE_MAX > 79){
+                return false;
+            }
+
+            else if(PressureB_Input < STEAM_B_PRESSURE_MIN || PressureB_Input > STEAM_B_PRESSURE_MAX){
+                return false;
+            }
+
+            else if(Level_Pressure_Input < LEVEL_PRESSURE_MIN || Level_Pressure_Input > LEVEL_PRESSURE_MAX){
+                return false;
+            }
+
+            else if(Power_Turbine_load_Input < TURBINE_LOAD_MIN || Power_Turbine_load_Input > TURBINE_LOAD_MAX){
+                return false;
+            }
+
+            else if(RCS_Pressure_Input < RCS_PRESSURE_MIN || RCS_Pressure_Input > RCS_PRESSURE_MAX){
+                return false;
+            }
+
+            else if(Total_Leakage_Input < TOTAL_LEAKAGE_MIN || Total_Leakage_Input > TOTAL_LEAKAGE_MAX){
+                return false;
+            }
+
+            else{
+                return true;
+            }
         }
-
 }
