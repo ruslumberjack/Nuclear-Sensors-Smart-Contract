@@ -45,6 +45,7 @@ contract NuclearSensors{
     }
 
     Sensor[] public Sensor_Array;     
+    mapping(int => Sensor) public Sensor_Array_Time_Map;
 
     event SensorRecordAdded(
         int Time,
@@ -57,6 +58,9 @@ contract NuclearSensors{
         int RCS_Pressure,
         int Total_Leakage
     );
+
+    event SensorOutOfRange(int Time_Input, string message);
+
 
     function add_sensor_data (
         int Time_Input,
@@ -85,7 +89,7 @@ contract NuclearSensors{
 
             new_sensor.timestamp = block.timestamp;
 
-            bool values_in_range = 
+            string memory error_message = 
                 check_if_in_range(
                     Radiation_Input,
                     Temperature_Average_Input,
@@ -97,20 +101,13 @@ contract NuclearSensors{
                     Total_Leakage_Input
                 );
             
-            if (values_in_range == false){
-                emit("One or more sensor values in data with timestamp: " + Time_Input + " are not in range.\n");
-                new_sensor.Values_In_Range = false;
-            }
-
-            else{
-                new_sensor.Values_In_Range = true;
-            }
             
-
-
+            emit SensorOutOfRange(Time_Input, error_message);
+            new_sensor.Values_In_Range = false;
 
             Sensor_Array.push(new_sensor);
-            
+            Sensor_Array_Time_Map[Time_Input] = new_sensor;
+
             emit SensorRecordAdded(
                 Time_Input,
                 Radiation_Input, 
@@ -136,41 +133,48 @@ contract NuclearSensors{
         int Power_Turbine_load_Input,
         int RCS_Pressure_Input,
         int Total_Leakage_Input
-        ) pure public returns(bool){
+        ) pure public returns(string memory){
             if (Radiation_Input != RADIATION_VALUE){
-                return false;
+                return "ERROR: Radiation Input out of range.";
             }
 
             else if(Temperature_Average_Input < TEMPERATURE_MIN || Temperature_Average_Input > TEMPERATURE_MAX){
-                return false;
+                return "ERROR: Temperature Average out of range";
             }
 
             else if(PressureA_Input < STEAM_A_PRESSURE_MIN || STEAM_A_PRESSURE_MAX > 79){
-                return false;
+                return "ERROR: Pressure A out of range";
             }
 
             else if(PressureB_Input < STEAM_B_PRESSURE_MIN || PressureB_Input > STEAM_B_PRESSURE_MAX){
-                return false;
+                return "ERROR: Pressure B out of range";
             }
 
             else if(Level_Pressure_Input < LEVEL_PRESSURE_MIN || Level_Pressure_Input > LEVEL_PRESSURE_MAX){
-                return false;
+                return "ERROR: Level Pressure out of range";
             }
 
             else if(Power_Turbine_load_Input < TURBINE_LOAD_MIN || Power_Turbine_load_Input > TURBINE_LOAD_MAX){
-                return false;
+                return "ERROR: Power Turbine Load out of range";
             }
 
             else if(RCS_Pressure_Input < RCS_PRESSURE_MIN || RCS_Pressure_Input > RCS_PRESSURE_MAX){
-                return false;
+                return "ERROR: RCS Pressure out of range";
             }
 
             else if(Total_Leakage_Input < TOTAL_LEAKAGE_MIN || Total_Leakage_Input > TOTAL_LEAKAGE_MAX){
-                return false;
+                return "ERROR: Total Leakage out of range";
             }
 
             else{
-                return true;
+                return "All values in range";
             }
         }
+
+    function get_data_by_index(uint256 index) public view returns (Sensor memory){
+        return Sensor_Array[index];
+    }    
+    function get_data_by_time(int time) public view returns (Sensor memory){
+        return Sensor_Array_Time_Map[time];    
+    }    
 }
